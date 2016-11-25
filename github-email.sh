@@ -27,7 +27,7 @@ repo="$2"
 
 log 'Email on GitHub'
 curl "https://api.github.com/users/$user" -s \
-    | sed -nE 's#^.*"email": "([^"]+)",.*$#\1#p'
+    | jq -r '.email'
 
 
 log 'Email on npm'
@@ -40,7 +40,7 @@ fi
 
 log 'Emails from recent commits'
 curl "https://api.github.com/users/$user/events" -s \
-    | sed -nE 's#^.*"(email)": "([^"]+)",.*$#\2#p' \
+    | jq -r '.[].payload.commits[]?.author.email' \
     | sort -u
 
 
@@ -48,11 +48,11 @@ log 'Emails from owned-repo recent activity'
 if [[ -z $repo ]]; then
     # get all owned repos
     repo="$(curl "https://api.github.com/users/$user/repos?type=owner&sort=updated" -s \
-        | sed -nE 's#^.*"name": "([^"]+)",.*$#\1#p' \
+        | jq -r '.[].name' \
         | head -n1)"
 fi
 
 curl "https://api.github.com/repos/$user/$repo/commits" -s \
-    | sed -nE 's#^.*"(email|name)": "([^"]+)",.*$#\2#p'  \
+    | jq -r '.[].commit.author|.name,.email'  \
     | pr -2 -at \
     | sort -u
