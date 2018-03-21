@@ -30,8 +30,15 @@ repo="$2"
 
 
 header 'Email on GitHub'
-curl "https://api.github.com/users/$user" -s \
-    | sed -nE 's#^.*"email": "([^"]+)",.*$#\1#p'
+if [ -z $GH_EMAIL_TOKEN ]; then
+    fade "   Github requires authenticated API requests to retrieve the email. See: https://git.io/vxctz"
+    fade "   To enable, open https://github.com/settings/tokens/new?description=github-email …"
+    fade "   Keep the checkboxes unchecked, hit 'Generate token', copy the token, then run this in your shell:"
+    fade "       export GH_EMAIL_TOKEN=<token>"
+else
+    curl "https://api.github.com/users/$user?access_token=$GH_EMAIL_TOKEN" -s \
+        | sed -nE 's#^.*"email": "([^"]+)",.*$#\1#p'
+fi
 
 header 'Email on npm'
 if hash jq 2>/dev/null; then
